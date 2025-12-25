@@ -24,8 +24,7 @@ if not GEMINI_API_KEY or not TELEGRAM_BOT_TOKEN:
 
 genai.configure(api_key=GEMINI_API_KEY)
 
-# 3. 🛡️ AUTO-MODEL SELECTOR (यह एरर को रोक देगा) 🛡️
-# यह कोड चेक करेगा कि कौन सा मॉडल चल रहा है, और उसे ही चुनेगा।
+# 3. 🛡️ AUTO-MODEL SELECTOR (404 Error Fix) 🛡️
 def get_working_model():
     models_to_try = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-pro']
     
@@ -65,7 +64,6 @@ def get_hindi_response(user_input, image=None):
         return response.text
     except Exception as e:
         logger.error(f"Generate Error: {e}")
-        # अगर फिर भी एरर आये तो मॉडल रीसेट करो
         return "⚠️ सर्वर बिजी है। कृपया 1 मिनट बाद दोबारा पूछें।"
 
 # 5. COMMANDS
@@ -79,7 +77,7 @@ def handle_pdf(message):
     if 'pdf' not in message.document.mime_type:
         bot.reply_to(message, "⚠️ सिर्फ PDF भेजें।")
         return
-    msg = bot.reply_to(message, "📂 PDF पढ़ रहा हूँ...")
+    msg = bot.reply_to(message, "📂 PDF पढ़ रहा हूँ...")
     try:
         file_info = bot.get_file(message.document.file_id)
         downloaded = bot.download_file(file_info.file_path)
@@ -88,9 +86,13 @@ def handle_pdf(message):
         for page in reader.pages[:5]: text += page.extract_text() + "\n"
         
         reply = get_hindi_response(f"Context: {text[:10000]}.\nQuestion: Summarize this.", None)
-        bot.edit_message_text(reply[:4000], message.chat.id, msg.message_id)
+        
+        if len(reply) > 4000:
+            bot.send_message(message.chat.id, reply[:4000])
+        else:
+            bot.edit_message_text(reply, message.chat.id, msg.message_id)
     except:
-        bot.edit_message_text("❌ PDF नहीं पढ़ पाया।", message.chat.id, msg.message_id)
+        bot.edit_message_text("❌ PDF नहीं पढ़ पाया।", message.chat.id, msg.message_id)
 
 @bot.message_handler(content_types=['photo'])
 def handle_image(message):
@@ -110,8 +112,7 @@ def handle_text(m):
     bot.send_chat_action(m.chat.id, 'typing')
     bot.reply_to(m, get_hindi_response(m.text))
 
-# 6. RENDER SERVER (Corrected)
-# यहाँ हमने 'app' नाम दिया है जो Render ढूंढता है
+# 6. RENDER SERVER (✅ FINAL FIX FOR PORT)
 app = Flask(__name__)
 
 @app.route('/')
@@ -119,7 +120,9 @@ def home():
     return "Bot is Running Live!"
 
 def run_http():
-    app.run(host='0.0.0.0', port=8080)
+    # यह लाइन सबसे ज़रूरी है - Render का Port पकड़ने के लिए
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
 
 if __name__ == "__main__":
     t = Thread(target=run_http)
