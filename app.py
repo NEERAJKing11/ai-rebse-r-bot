@@ -24,7 +24,7 @@ if not GEMINI_API_KEY or not TELEGRAM_BOT_TOKEN:
 
 genai.configure(api_key=GEMINI_API_KEY)
 
-# 3. 🛡️ AUTO-MODEL SELECTOR (404 Error Fix) 🛡️
+# 3. 🛡️ AUTO-MODEL SELECTOR
 def get_working_model():
     models_to_try = ['gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-pro']
     
@@ -32,7 +32,7 @@ def get_working_model():
         try:
             logger.info(f"Testing Model: {m}...")
             test_model = genai.GenerativeModel(m)
-            test_model.generate_content("Hi") # टेस्ट
+            test_model.generate_content("Hi") 
             logger.info(f"✅ Success! Connected to: {m}")
             return test_model
         except Exception as e:
@@ -112,7 +112,7 @@ def handle_text(m):
     bot.send_chat_action(m.chat.id, 'typing')
     bot.reply_to(m, get_hindi_response(m.text))
 
-# 6. RENDER SERVER (✅ FINAL FIX FOR PORT)
+# 6. RENDER SERVER (✅ 100% WORKING FIX)
 app = Flask(__name__)
 
 @app.route('/')
@@ -120,7 +120,7 @@ def home():
     return "Bot is Running Live!"
 
 def run_http():
-    # यह लाइन सबसे ज़रूरी है - Render का Port पकड़ने के लिए
+    # यह पोर्ट लाइन सही है
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
