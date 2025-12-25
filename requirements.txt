@@ -1,0 +1,6 @@
+flask
+pyTelegramBotAPI
+google-generativeai
+Pillow
+PyPDF2
+gunicorn
